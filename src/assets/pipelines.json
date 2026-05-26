@@ -35,18 +35,7 @@
         "node_name": "Alert Translator",
         "node_type": "m1",
         "model_version": "1.0",
-        "node_parameters": {
-          "siem_name": "wazuh",
-          "input_format": "json_or_ndjson",
-          "name_field": "rule.description",
-          "description_field": "rule.description",
-          "ttps_field": "rule.mitre.id",
-          "alert_type_field": "tags.engage.alert_type",
-          "acceptable_risk_field": "tags.engage.acceptable_risk",
-          "payload_context_fields": [
-            "rule.id"
-          ]
-        },
+        "node_parameters": {},
         "node_execution_settings": {},
         "node_output_configuration": {}
       },
