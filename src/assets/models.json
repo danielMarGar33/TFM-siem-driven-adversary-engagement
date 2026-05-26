@@ -1,0 +1,66 @@
+[
+  {
+    "id": "m1",
+    "name": "Alert Translator",
+    "desc": "Normalizes a raw SIEM alert using an operator-defined configuration object. It extracts the normalized alert fields, assigns incremental alert IDs, preserves payload context, and produces a normalized alert collection.",
+    "inputs": [
+      "Raw SIEM alert"
+    ],
+    "outputs": [
+      "Normalized alerts",
+      "Number of normalized alerts"
+    ],
+    "compatibleInputs": [],
+    "compatibleOutputs": [
+      "m2"
+    ],
+    "execution_path": "/translator",
+    "parameters": {
+      "siem_name": "wazuh",
+      "input_format": "json_or_ndjson",
+      "name_field": "rule.description",
+      "description_field": "rule.description",
+      "ttps_field": "rule.mitre.id",
+      "alert_type_field": "tags.engage.alert_type",
+      "acceptable_risk_field": "tags.engage.acceptable_risk",
+      "payload_context_fields": [
+        "rule.id"
+      ]
+    },
+    "execution": {
+      "mode": "Single Run",
+      "duration": 1,
+      "intervention": "Fully Automated"
+    },
+    "outputConfig": {
+      "variables": "num_alerts, alerts.id, alerts.name, alerts.description, alerts.ttps, alerts.alert_type, alerts.acceptable_risk, alerts.payload_context",
+      "visualization": "Table"
+    }
+  },
+  {
+    "id": "m2",
+    "name": "Engage Mapper",
+    "desc": "Maps the normalized alert collection to MITRE Engage. It uses alert_type to select the Goal, TTPs to identify candidate Activities, and acceptable_risk to label each Activity as recommended or not_recommended according to CVSS-derived exposure scores.",
+    "inputs": [
+      "Normalized alerts"
+    ],
+    "outputs": [
+      "MITRE Engage recommendation"
+    ],
+    "compatibleInputs": [
+      "m1"
+    ],
+    "compatibleOutputs": [],
+    "execution_path": "/engage-mapper",
+    "parameters": {},
+    "execution": {
+      "mode": "Single Run",
+      "duration": 1,
+      "intervention": "Fully Automated"
+    },
+    "outputConfig": {
+      "variables": "input_alert_id, input_alert_name, goal_id, goal_name, acceptable_risk, approaches, activities, activity_exposure, recommendation.status",
+      "visualization": "Graph, Table"
+    }
+  }
+]

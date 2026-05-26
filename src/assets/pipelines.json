@@ -1,0 +1,73 @@
+[
+  {
+    "pipeline_id": "PIPE-ENGAGE-001",
+    "pipeline_description": "SIEM-driven adversary engagement pipeline. It receives a raw SIEM alert from the frontend, normalizes the alert with model parameters, and maps it to MITRE Engage Goals, Approaches and risk-aware Activities.",
+    "mission_characterization_id": "MC-ENGAGE-001",
+    "classification_level": "unclassified",
+    "pipeline_execution_mode": "deterministic",
+    "metadata": {
+      "tags": [
+        "siem",
+        "wazuh",
+        "mitre-engage",
+        "cyber-deception",
+        "adversary-engagement"
+      ],
+      "created_at": "2026-05-25T00:00:00Z",
+      "updated_at": "2026-05-25T00:00:00Z",
+      "created_by": "decision-engine"
+    },
+    "results_summary": "Pending execution. The pipeline translates a raw SIEM alert into a normalized alert collection and then generates MITRE Engage recommendations with recommended/not_recommended Activity labels.",
+    "pipeline_input": {
+      "initial_conditions_id": "IC-SIEM-ALERT-001",
+      "initial_conditions_targets": [
+        "n1"
+      ],
+      "initial_metadata": {
+        "required_frontend_inputs": [
+          "Raw SIEM alert"
+        ]
+      }
+    },
+    "pipeline_nodes": [
+      {
+        "node_id": "n1",
+        "node_name": "Alert Translator",
+        "node_type": "m1",
+        "model_version": "1.0",
+        "node_parameters": {
+          "siem_name": "wazuh",
+          "input_format": "json_or_ndjson",
+          "name_field": "rule.description",
+          "description_field": "rule.description",
+          "ttps_field": "rule.mitre.id",
+          "alert_type_field": "tags.engage.alert_type",
+          "acceptable_risk_field": "tags.engage.acceptable_risk",
+          "payload_context_fields": [
+            "rule.id"
+          ]
+        },
+        "node_execution_settings": {},
+        "node_output_configuration": {}
+      },
+      {
+        "node_id": "n2",
+        "node_name": "Engage Mapper",
+        "node_type": "m2",
+        "model_version": "1.0",
+        "node_parameters": {},
+        "node_execution_settings": {},
+        "node_output_configuration": {}
+      }
+    ],
+    "pipeline_connections": [
+      {
+        "connection_id": "c1",
+        "source_node_id": "n1",
+        "source_output": "Normalized alerts",
+        "target_node_id": "n2",
+        "target_input": "Normalized alerts"
+      }
+    ]
+  }
+]

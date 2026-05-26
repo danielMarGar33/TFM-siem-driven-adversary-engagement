@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  ecysap-frontend:
+    build: .
+    container_name: ecysap_vue_front
+    restart: always
+    ports:
+      - "10081:80"  # Izquierda: Tu puerto alto en tu máquina. Derecha: El puerto 80 interno de Nginx.
+    networks:
+      - ecysap_network
+
+networks:
+  ecysap_network:
+    driver: bridge

@@ -1,0 +1,334 @@
+{
+  "schema": "mitre-engage-activity-exposure-v1",
+  "description": "CVSS-derived exposure vectors and calculated scores for MITRE Engage Approach/Activity pairs.",
+  "entries": [
+    {
+      "approach": "Collect",
+      "activity": "API Monitoring",
+      "cvss_vector": "AV:L/AC:H/PR:L/UI:N/S:U/C:L/I:N/A:N",
+      "cvss_base_score": 2.5,
+      "impact_subscore": 1.4,
+      "exploitability_subscore": 1.0
+    },
+    {
+      "approach": "Collect",
+      "activity": "Network Monitoring",
+      "cvss_vector": "AV:A/AC:H/PR:L/UI:N/S:U/C:L/I:N/A:N",
+      "cvss_base_score": 2.6,
+      "impact_subscore": 1.4,
+      "exploitability_subscore": 1.2
+    },
+    {
+      "approach": "Collect",
+      "activity": "Software Manipulation",
+      "cvss_vector": "AV:L/AC:H/PR:L/UI:N/S:U/C:L/I:N/A:N",
+      "cvss_base_score": 2.5,
+      "impact_subscore": 1.4,
+      "exploitability_subscore": 1.0
+    },
+    {
+      "approach": "Collect",
+      "activity": "System Activity Monitoring",
+      "cvss_vector": "AV:L/AC:H/PR:L/UI:N/S:U/C:L/I:N/A:N",
+      "cvss_base_score": 2.5,
+      "impact_subscore": 1.4,
+      "exploitability_subscore": 1.0
+    },
+    {
+      "approach": "Detect",
+      "activity": "Introduced Vulnerabilities",
+      "cvss_vector": "AV:N/AC:H/PR:N/UI:N/S:U/C:L/I:N/A:N",
+      "cvss_base_score": 3.7,
+      "impact_subscore": 1.4,
+      "exploitability_subscore": 2.2
+    },
+    {
+      "approach": "Detect",
+      "activity": "Lures",
+      "cvss_vector": "AV:L/AC:H/PR:L/UI:N/S:U/C:L/I:N/A:N",
+      "cvss_base_score": 2.5,
+      "impact_subscore": 1.4,
+      "exploitability_subscore": 1.0
+    },
+    {
+      "approach": "Detect",
+      "activity": "Malware Detonation",
+      "cvss_vector": "AV:L/AC:H/PR:N/UI:N/S:U/C:L/I:N/A:L",
+      "cvss_base_score": 4.0,
+      "impact_subscore": 2.5,
+      "exploitability_subscore": 1.4
+    },
+    {
+      "approach": "Detect",
+      "activity": "Network Analysis",
+      "cvss_vector": "AV:A/AC:H/PR:L/UI:N/S:U/C:L/I:N/A:N",
+      "cvss_base_score": 2.6,
+      "impact_subscore": 1.4,
+      "exploitability_subscore": 1.2
+    },
+    {
+      "approach": "Prevent",
+      "activity": "Baseline",
+      "cvss_vector": "AV:L/AC:L/PR:H/UI:N/S:U/C:N/I:L/A:L",
+      "cvss_base_score": 3.4,
+      "impact_subscore": 2.5,
+      "exploitability_subscore": 0.8
+    },
+    {
+      "approach": "Prevent",
+      "activity": "Hardware Manipulation",
+      "cvss_vector": "AV:P/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:L",
+      "cvss_base_score": 3.5,
+      "impact_subscore": 2.5,
+      "exploitability_subscore": 0.9
+    },
+    {
+      "approach": "Prevent",
+      "activity": "Isolation",
+      "cvss_vector": "AV:A/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:L",
+      "cvss_base_score": 3.5,
+      "impact_subscore": 1.4,
+      "exploitability_subscore": 2.1
+    },
+    {
+      "approach": "Prevent",
+      "activity": "Network Manipulation",
+      "cvss_vector": "AV:A/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:L",
+      "cvss_base_score": 4.6,
+      "impact_subscore": 2.5,
+      "exploitability_subscore": 2.1
+    },
+    {
+      "approach": "Prevent",
+      "activity": "Security Controls",
+      "cvss_vector": "AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:L",
+      "cvss_base_score": 4.4,
+      "impact_subscore": 2.5,
+      "exploitability_subscore": 1.8
+    },
+    {
+      "approach": "Direct",
+      "activity": "Attack Vector Migration",
+      "cvss_vector": "AV:N/AC:H/PR:N/UI:R/S:C/C:L/I:L/A:H",
+      "cvss_base_score": 7.5,
+      "impact_subscore": 5.3,
+      "exploitability_subscore": 1.6
+    },
+    {
+      "approach": "Direct",
+      "activity": "Email Manipulation",
+      "cvss_vector": "AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:L",
+      "cvss_base_score": 5.5,
+      "impact_subscore": 3.4,
+      "exploitability_subscore": 2.1
+    },
+    {
+      "approach": "Direct",
+      "activity": "Introduced Vulnerabilities",
+      "cvss_vector": "AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:L/A:N",
+      "cvss_base_score": 5.4,
+      "impact_subscore": 2.5,
+      "exploitability_subscore": 2.8
+    },
+    {
+      "approach": "Direct",
+      "activity": "Lures",
+      "cvss_vector": "AV:L/AC:L/PR:L/UI:N/S:U/C:L/I:L/A:N",
+      "cvss_base_score": 4.4,
+      "impact_subscore": 2.5,
+      "exploitability_subscore": 1.8
+    },
+    {
+      "approach": "Direct",
+      "activity": "Malware Detonation",
+      "cvss_vector": "AV:L/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:H",
+      "cvss_base_score": 7.3,
+      "impact_subscore": 4.7,
+      "exploitability_subscore": 2.5
+    },
+    {
+      "approach": "Direct",
+      "activity": "Network Manipulation",
+      "cvss_vector": "AV:A/AC:L/PR:L/UI:N/S:C/C:N/I:L/A:L",
+      "cvss_base_score": 5.4,
+      "impact_subscore": 2.7,
+      "exploitability_subscore": 2.3
+    },
+    {
+      "approach": "Direct",
+      "activity": "Peripheral Management",
+      "cvss_vector": "AV:P/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:L",
+      "cvss_base_score": 4.3,
+      "impact_subscore": 3.4,
+      "exploitability_subscore": 0.9
+    },
+    {
+      "approach": "Direct",
+      "activity": "Security Controls",
+      "cvss_vector": "AV:L/AC:L/PR:L/UI:N/S:C/C:L/I:H/A:H",
+      "cvss_base_score": 8.7,
+      "impact_subscore": 6.0,
+      "exploitability_subscore": 2.0
+    },
+    {
+      "approach": "Direct",
+      "activity": "Software Manipulation",
+      "cvss_vector": "AV:L/AC:L/PR:L/UI:N/S:U/C:L/I:L/A:L",
+      "cvss_base_score": 5.3,
+      "impact_subscore": 3.4,
+      "exploitability_subscore": 1.8
+    },
+    {
+      "approach": "Disrupt",
+      "activity": "Isolation",
+      "cvss_vector": "AV:A/AC:L/PR:L/UI:N/S:C/C:N/I:N/A:H",
+      "cvss_base_score": 6.8,
+      "impact_subscore": 4.0,
+      "exploitability_subscore": 2.3
+    },
+    {
+      "approach": "Disrupt",
+      "activity": "Lures",
+      "cvss_vector": "AV:N/AC:L/PR:N/UI:R/S:U/C:L/I:L/A:L",
+      "cvss_base_score": 6.3,
+      "impact_subscore": 3.4,
+      "exploitability_subscore": 2.8
+    },
+    {
+      "approach": "Disrupt",
+      "activity": "Network Manipulation",
+      "cvss_vector": "AV:A/AC:L/PR:L/UI:N/S:C/C:N/I:L/A:H",
+      "cvss_base_score": 7.6,
+      "impact_subscore": 4.7,
+      "exploitability_subscore": 2.3
+    },
+    {
+      "approach": "Disrupt",
+      "activity": "Software Manipulation",
+      "cvss_vector": "AV:L/AC:L/PR:L/UI:N/S:C/C:L/I:H/A:L",
+      "cvss_base_score": 7.9,
+      "impact_subscore": 5.3,
+      "exploitability_subscore": 2.0
+    },
+    {
+      "approach": "Reassure",
+      "activity": "Application Diversity",
+      "cvss_vector": "AV:N/AC:H/PR:L/UI:N/S:U/C:L/I:L/A:L",
+      "cvss_base_score": 5.0,
+      "impact_subscore": 3.4,
+      "exploitability_subscore": 1.6
+    },
+    {
+      "approach": "Reassure",
+      "activity": "Artifact Diversity",
+      "cvss_vector": "AV:L/AC:H/PR:L/UI:N/S:U/C:L/I:L/A:N",
+      "cvss_base_score": 3.6,
+      "impact_subscore": 2.5,
+      "exploitability_subscore": 1.0
+    },
+    {
+      "approach": "Reassure",
+      "activity": "Burn-In",
+      "cvss_vector": "AV:L/AC:H/PR:L/UI:N/S:U/C:L/I:N/A:N",
+      "cvss_base_score": 2.5,
+      "impact_subscore": 1.4,
+      "exploitability_subscore": 1.0
+    },
+    {
+      "approach": "Reassure",
+      "activity": "Email Manipulation",
+      "cvss_vector": "AV:N/AC:H/PR:L/UI:R/S:U/C:L/I:L/A:N",
+      "cvss_base_score": 3.7,
+      "impact_subscore": 2.5,
+      "exploitability_subscore": 1.2
+    },
+    {
+      "approach": "Reassure",
+      "activity": "Information Manipulation",
+      "cvss_vector": "AV:L/AC:H/PR:L/UI:N/S:U/C:L/I:L/A:N",
+      "cvss_base_score": 3.6,
+      "impact_subscore": 2.5,
+      "exploitability_subscore": 1.0
+    },
+    {
+      "approach": "Reassure",
+      "activity": "Network Diversity",
+      "cvss_vector": "AV:A/AC:H/PR:N/UI:N/S:U/C:L/I:L/A:L",
+      "cvss_base_score": 5.0,
+      "impact_subscore": 3.4,
+      "exploitability_subscore": 1.6
+    },
+    {
+      "approach": "Reassure",
+      "activity": "Peripheral Management",
+      "cvss_vector": "AV:P/AC:H/PR:N/UI:N/S:U/C:L/I:N/A:N",
+      "cvss_base_score": 2.0,
+      "impact_subscore": 1.4,
+      "exploitability_subscore": 0.5
+    },
+    {
+      "approach": "Reassure",
+      "activity": "Pocket Litter",
+      "cvss_vector": "AV:L/AC:H/PR:L/UI:N/S:U/C:L/I:L/A:N",
+      "cvss_base_score": 3.6,
+      "impact_subscore": 2.5,
+      "exploitability_subscore": 1.0
+    },
+    {
+      "approach": "Motivate",
+      "activity": "Application Diversity",
+      "cvss_vector": "AV:N/AC:H/PR:N/UI:N/S:U/C:L/I:L/A:L",
+      "cvss_base_score": 5.6,
+      "impact_subscore": 3.4,
+      "exploitability_subscore": 2.2
+    },
+    {
+      "approach": "Motivate",
+      "activity": "Artifact Diversity",
+      "cvss_vector": "AV:N/AC:H/PR:N/UI:N/S:U/C:L/I:L/A:N",
+      "cvss_base_score": 4.8,
+      "impact_subscore": 2.5,
+      "exploitability_subscore": 2.2
+    },
+    {
+      "approach": "Motivate",
+      "activity": "Information Manipulation",
+      "cvss_vector": "AV:N/AC:H/PR:N/UI:N/S:U/C:L/I:H/A:N",
+      "cvss_base_score": 6.5,
+      "impact_subscore": 4.2,
+      "exploitability_subscore": 2.2
+    },
+    {
+      "approach": "Motivate",
+      "activity": "Introduced Vulnerabilities",
+      "cvss_vector": "AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L",
+      "cvss_base_score": 8.3,
+      "impact_subscore": 3.7,
+      "exploitability_subscore": 3.9
+    },
+    {
+      "approach": "Motivate",
+      "activity": "Malware Detonation",
+      "cvss_vector": "AV:L/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:H",
+      "cvss_base_score": 8.5,
+      "impact_subscore": 5.3,
+      "exploitability_subscore": 2.5
+    },
+    {
+      "approach": "Motivate",
+      "activity": "Network Diversity",
+      "cvss_vector": "AV:N/AC:H/PR:N/UI:N/S:U/C:L/I:L/A:L",
+      "cvss_base_score": 5.6,
+      "impact_subscore": 3.4,
+      "exploitability_subscore": 2.2
+    },
+    {
+      "approach": "Motivate",
+      "activity": "Personas",
+      "cvss_vector": "AV:N/AC:H/PR:N/UI:R/S:C/C:L/I:L/A:N",
+      "cvss_base_score": 4.7,
+      "impact_subscore": 2.7,
+      "exploitability_subscore": 1.6
+    }
+  ]
+}

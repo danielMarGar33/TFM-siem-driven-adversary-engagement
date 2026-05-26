@@ -1,0 +1,20 @@
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+  background-color: #F8FAFB;
+  font-family: 'Roboto', sans-serif;
+}
+
+.main-wrapper {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow-x: hidden;
+}
+
+.main-content {
+  padding: 16px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
