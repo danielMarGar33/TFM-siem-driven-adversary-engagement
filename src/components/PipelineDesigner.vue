@@ -508,6 +508,8 @@ const goBack = () => {
       <button class="btn-back" @click="$router.back()">&lt; Back</button>
       <div>
         <button class="btn-primary" @click="$router.push('/execution/simulations')">Execution List</button>
+        &nbsp;
+        <button class="create-execution-button btn-primary-exec" @click="createExecution">Create Execution</button>
       </div>
     </div>
     <div class="designer-header">
@@ -635,10 +637,6 @@ const goBack = () => {
             </div>
           </div>
         </aside>
-
-        <button class="btn-primary full-width create-execution-button" @click="createExecution">
-          Create Execution
-        </button>
       </aside>
 
       <main class="canvas-wrapper">

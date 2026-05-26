@@ -340,11 +340,16 @@
   box-sizing: border-box;
 }
 
-.create-execution-button {
-  margin-top: auto;
-  position: sticky;
-  bottom: 16px;
-  z-index: 3;
+.btn-primary-exec {
+  background-color: #bc5f08;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-weight: 500;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .btn-primary {
