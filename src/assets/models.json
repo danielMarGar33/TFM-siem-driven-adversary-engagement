@@ -20,9 +20,11 @@
       "input_format": "",
       "name_field": "",
       "description_field": "",
-      "ttps_field": "",
+      "ttps_fields": [],
       "alert_type_field": "",
-      "acceptable_risk_field": "",
+      "max_cvss_base_score": "",
+      "max_impact_subscore": "",
+      "max_exploitability_subscore": "",
       "payload_context_fields": []
     },
     "execution": {
@@ -31,14 +33,14 @@
       "intervention": "Fully Automated"
     },
     "outputConfig": {
-      "variables": "num_alerts, alerts.id, alerts.name, alerts.description, alerts.ttps, alerts.alert_type, alerts.acceptable_risk, alerts.payload_context",
+      "variables": "num_alerts, alerts.id, alerts.name, alerts.description, alerts.ttps, alerts.alert_type, alerts.max_cvss_base_score, alerts.max_impact_subscore, alerts.max_exploitability_subscore, alerts.payload_context",
       "visualization": "Table"
     }
   },
   {
     "id": "m2",
     "name": "Engage Mapper",
-    "desc": "Maps the normalized alert collection to MITRE Engage. It uses alert_type to select the Goal, TTPs to identify candidate Activities, and acceptable_risk to label each Activity as recommended or not_recommended according to CVSS-derived exposure scores.",
+    "desc": "Maps the normalized alert collection to MITRE Engage. It uses alert_type to select the Goal, TTPs to identify candidate Activities, and the three CVSS-derived maximum score thresholds to label each Activity as recommended or not_recommended.",
     "inputs": [
       "Normalized alerts"
     ],
@@ -57,7 +59,7 @@
       "intervention": "Fully Automated"
     },
     "outputConfig": {
-      "variables": "input_alert_id, input_alert_name, goal_id, goal_name, acceptable_risk, approaches, activities, activity_exposure, recommendation.status",
+      "variables": "input_alert_id, input_alert_name, goal_id, goal_name, max_cvss_base_score, max_impact_subscore, max_exploitability_subscore, approaches, activities, activity_exposure, recommendation.status",
       "visualization": "Graph, Table"
     }
   }

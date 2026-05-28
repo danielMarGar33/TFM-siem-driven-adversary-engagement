@@ -1,5 +1,5 @@
-﻿# Alert processed input --> lee "id", "ttps", "alert_type" y "acceptable_risk"
-# desde la salida anterior del translator cuando se ejecuta por webhook.
+# Alert processed input --> lee "id", "ttps", "alert_type"
+# y los tres maximos CVSS-derived desde la salida anterior del translator cuando se ejecuta por webhook.
 #
 # Si alert_type = expose, entonces Goal = Expose.
 # Si alert_type = affect, entonces Goal = Affect.
@@ -11,7 +11,6 @@
 # Las Activities NO se eliminan por riesgo.
 # Todas salen en el output con:
 #   - activity_exposure
-#   - acceptable_risk
 #   - recommendation.status = recommended | not_recommended
 
 import json
@@ -49,7 +48,7 @@ GOAL_BY_ALERT_TYPE = {
     "elicit": "EGO0003",  # Elicit
 }
 
-REQUIRED_ACCEPTABLE_RISK_FIELDS = [
+REQUIRED_SCORE_FIELDS = [
     "max_cvss_base_score",
     "max_impact_subscore",
     "max_exploitability_subscore",
@@ -180,21 +179,18 @@ def normalize_alert_type(value: Any) -> str:
     return alert_type
 
 
-def normalize_acceptable_risk(value: Any) -> Dict[str, float]:
-    if not isinstance(value, dict):
-        raise ValueError("Missing or invalid acceptable_risk in translator output.")
-
+def normalize_score_fields(alert: Dict[str, Any]) -> Dict[str, float]:
     normalized = {}
 
-    for field in REQUIRED_ACCEPTABLE_RISK_FIELDS:
-        if field not in value:
-            raise ValueError(f"Missing acceptable_risk.{field}")
+    for field in REQUIRED_SCORE_FIELDS:
+        if field not in alert:
+            raise ValueError(f"Missing {field} in translator output.")
 
         try:
-            normalized[field] = float(value[field])
+            normalized[field] = float(alert[field])
         except (TypeError, ValueError) as exc:
             raise ValueError(
-                f"Invalid acceptable_risk.{field}: expected numeric value, got {value[field]!r}"
+                f"Invalid {field}: expected numeric value, got {alert[field]!r}"
             ) from exc
 
     return normalized
@@ -636,10 +632,10 @@ def get_activity_exposure_for_pair(
 # =========================
 def evaluate_activity_recommendation(
     activity_exposure: Optional[Dict[str, Any]],
-    acceptable_risk: Dict[str, float],
+    score_fields: Dict[str, float],
 ) -> Dict[str, Any]:
     """
-    EvalÃºa si una Activity es recomendable segÃºn acceptable_risk.
+    EvalÃºa si una Activity es recomendable segÃºn los tres mAximos configurados.
 
     La Activity nunca se elimina. Solo se marca como:
       - recommended
@@ -653,28 +649,28 @@ def evaluate_activity_recommendation(
 
     exceeded_fields = []
 
-    if activity_exposure["cvss_base_score"] > acceptable_risk["max_cvss_base_score"]:
+    if activity_exposure["cvss_base_score"] > score_fields["max_cvss_base_score"]:
         exceeded_fields.append("cvss_base_score")
 
-    if activity_exposure["impact_subscore"] > acceptable_risk["max_impact_subscore"]:
+    if activity_exposure["impact_subscore"] > score_fields["max_impact_subscore"]:
         exceeded_fields.append("impact_subscore")
 
     if (
         activity_exposure["exploitability_subscore"]
-        > acceptable_risk["max_exploitability_subscore"]
+        > score_fields["max_exploitability_subscore"]
     ):
         exceeded_fields.append("exploitability_subscore")
 
     if exceeded_fields:
         return {
             "status": "not_recommended",
-            "reason": "exceeds acceptable risk",
+            "reason": "exceeds configured maximums",
             "exceeded_fields": exceeded_fields,
         }
 
     return {
         "status": "recommended",
-        "reason": "within acceptable risk",
+        "reason": "within configured maximums",
     }
 
 
@@ -682,14 +678,13 @@ def build_activity_output(
     activity_id: str,
     activity: Dict[str, Any],
     activity_exposure: Optional[Dict[str, Any]],
-    acceptable_risk: Dict[str, float],
+    score_fields: Dict[str, float],
 ) -> Dict[str, Any]:
     """
     Construye la salida de una Activity.
 
     Incluye:
       - exposure real del par Approach / Activity
-      - acceptable_risk de la alerta
       - recommended / not_recommended
     """
     return {
@@ -699,7 +694,7 @@ def build_activity_output(
         "activity_exposure": activity_exposure,
         "recommendation": evaluate_activity_recommendation(
             activity_exposure=activity_exposure,
-            acceptable_risk=acceptable_risk,
+            score_fields=score_fields,
         ),
     }
 
@@ -720,7 +715,7 @@ def map_alert_to_engage(alert: Dict[str, Any], debug: bool = False) -> Dict[str,
 
     alert_id = alert.get("id")
     alert_type = normalize_alert_type(alert.get("alert_type"))
-    acceptable_risk = normalize_acceptable_risk(alert.get("acceptable_risk"))
+    score_fields = normalize_score_fields(alert)
     ttps = normalize_ttps(alert.get("ttps"))
 
     goal_id = GOAL_BY_ALERT_TYPE[alert_type]
@@ -787,7 +782,7 @@ def map_alert_to_engage(alert: Dict[str, Any], debug: bool = False) -> Dict[str,
                 activity_id=activity_id,
                 activity=activity,
                 activity_exposure=activity_exposure,
-                acceptable_risk=acceptable_risk,
+                score_fields=score_fields,
             )
 
             if activity_output["recommendation"]["status"] == "recommended":
@@ -816,7 +811,9 @@ def map_alert_to_engage(alert: Dict[str, Any], debug: bool = False) -> Dict[str,
             "goal_id": goal_id,
             "goal_name": goal.get("name"),
             "goal_description": goal.get("description"),
-            "acceptable_risk": acceptable_risk,
+            "max_cvss_base_score": score_fields["max_cvss_base_score"],
+            "max_impact_subscore": score_fields["max_impact_subscore"],
+            "max_exploitability_subscore": score_fields["max_exploitability_subscore"],
             "approaches": approaches_output,
         },
     }
@@ -828,7 +825,9 @@ def map_alert_to_engage(alert: Dict[str, Any], debug: bool = False) -> Dict[str,
             "description": alert.get("description"),
             "ttps": ttps,
             "alert_type": alert_type,
-            "acceptable_risk": acceptable_risk,
+            "max_cvss_base_score": score_fields["max_cvss_base_score"],
+            "max_impact_subscore": score_fields["max_impact_subscore"],
+            "max_exploitability_subscore": score_fields["max_exploitability_subscore"],
             "payload_context": alert.get("payload_context"),
         }
 

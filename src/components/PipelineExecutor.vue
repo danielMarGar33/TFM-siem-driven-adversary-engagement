@@ -116,6 +116,13 @@ const formatDate = (dateString: string) => {
 };
 
 const buildTranslatorConfiguration = (parameters: Record<string, any> = {}) => {
+  const rawTtpFields = parameters.ttps_fields ?? parameters.ttps_field;
+  const ttpFieldSource = Array.isArray(rawTtpFields)
+    ? rawTtpFields
+    : String(rawTtpFields || '').split(',');
+  const ttpFields = ttpFieldSource
+    .map((field) => field.trim())
+    .filter((field) => field.length > 0);
   const rawPayloadContext = parameters.payload_context_fields;
   const payloadContextSource = Array.isArray(rawPayloadContext)
     ? rawPayloadContext
@@ -132,9 +139,11 @@ const buildTranslatorConfiguration = (parameters: Record<string, any> = {}) => {
     field_mapping: {
       name: String(parameters.name_field || '').trim(),
       description: String(parameters.description_field || '').trim(),
-      ttps: String(parameters.ttps_field || '').trim(),
+      ttps: ttpFields,
       alert_type: String(parameters.alert_type_field || '').trim(),
-      acceptable_risk: String(parameters.acceptable_risk_field || '').trim(),
+      max_cvss_base_score: String(parameters.max_cvss_base_score || '').trim(),
+      max_impact_subscore: String(parameters.max_impact_subscore || '').trim(),
+      max_exploitability_subscore: String(parameters.max_exploitability_subscore || '').trim(),
       payload_context: payloadContext
     }
   };
@@ -478,7 +487,7 @@ const goToDesign = () => {
       </div>
 
       <div class="action-buttons">
-        <button class="btn-action" :class="{ disabled: !canPlay }" @click="handlePlay">
+        <button v-if="canPlay" class="btn-action" @click="handlePlay">
           <img src="/actions/Play.svg" alt="Play" />
           Play
         </button>

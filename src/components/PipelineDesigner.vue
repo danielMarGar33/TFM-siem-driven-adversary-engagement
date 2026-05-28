@@ -252,7 +252,7 @@ const showToastMessage = (id: string, action: string) => {
 
 const formatParamLabel = (key: string) => {
   return key
-    .replace(/_/g, ' ')
+    .replace(/[._]/g, ' ')
     .split(' ')
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ');
@@ -264,9 +264,11 @@ const getParameterPlaceholder = (key: string) => {
     input_format: 'Example: json_or_ndjson',
     name_field: 'Example: rule.description',
     description_field: 'Example: rule.description',
-    ttps_field: 'Example: rule.mitre.id',
+    ttps_fields: 'Example: rule.mitre.id',
     alert_type_field: 'Example: tags.engage.alert_type',
-    acceptable_risk_field: 'Example: tags.engage.acceptable_risk',
+    max_cvss_base_score: 'Example: tags.engage.max_cvss_base_score',
+    max_impact_subscore: 'Example: tags.engage.max_impact_subscore',
+    max_exploitability_subscore: 'Example: tags.engage.max_exploitability_subscore',
     payload_context_fields: 'Example: rule.id, agent.name'
   };
 
@@ -285,8 +287,34 @@ const sanitizePayloadContextFieldsValue = (value: unknown) => {
     .filter((field) => field.length > 0);
 };
 
+const sanitizeTtpFieldsValue = (value: unknown) => {
+  const source = Array.isArray(value) ? value : String(value || '').split(',');
+
+  return source
+    .map((field) => String(field || '').trim())
+    .filter((field) => field.length > 0);
+};
+
+const REQUIRED_TRANSLATOR_PARAMETER_LABELS: Record<string, string> = {
+  siem_name: 'SIEM Name',
+  input_format: 'Input Format',
+  name_field: 'Name Field',
+  description_field: 'Description Field',
+  alert_type_field: 'Alert Type Field',
+  max_cvss_base_score: 'Max CVSS Base Score',
+  max_impact_subscore: 'Max Impact Subscore',
+  max_exploitability_subscore: 'Max Exploitability Subscore'
+};
+
 const sanitizeParameters = (parameters: Record<string, any> = {}) => {
   const sanitized = { ...parameters };
+
+  if ('ttps_fields' in sanitized || 'ttps_field' in sanitized) {
+    sanitized.ttps_fields = sanitizeTtpFieldsValue(
+      sanitized.ttps_fields ?? sanitized.ttps_field
+    );
+    delete sanitized.ttps_field;
+  }
 
   if ('payload_context_fields' in sanitized) {
     sanitized.payload_context_fields = sanitizePayloadContextFieldsValue(
@@ -318,12 +346,35 @@ const getPayloadContextFields = (node: any) => {
   return node.parameters.payload_context_fields;
 };
 
+const getTtpFields = (node: any) => {
+  const value = node?.parameters?.ttps_fields;
+
+  if (Array.isArray(value)) {
+    return value;
+  }
+
+  const fields = sanitizeTtpFieldsValue(value ?? node?.parameters?.ttps_field);
+  node.parameters.ttps_fields = fields;
+  delete node.parameters.ttps_field;
+
+  return node.parameters.ttps_fields;
+};
+
 const sanitizePayloadContextFieldsForNode = (node: any) => {
   if (!node?.parameters) return;
 
   node.parameters.payload_context_fields = sanitizePayloadContextFieldsValue(
     node.parameters.payload_context_fields
   );
+};
+
+const sanitizeTtpFieldsForNode = (node: any) => {
+  if (!node?.parameters) return;
+
+  node.parameters.ttps_fields = sanitizeTtpFieldsValue(
+    node.parameters.ttps_fields ?? node.parameters.ttps_field
+  );
+  delete node.parameters.ttps_field;
 };
 
 const addPayloadContextField = (node: any) => {
@@ -338,10 +389,29 @@ const addPayloadContextField = (node: any) => {
   node.parameters.payload_context_fields.push('');
 };
 
+const addTtpField = (node: any) => {
+  if (!node?.parameters) return;
+
+  if (!Array.isArray(node.parameters.ttps_fields)) {
+    node.parameters.ttps_fields = sanitizeTtpFieldsValue(
+      node.parameters.ttps_fields ?? node.parameters.ttps_field
+    );
+  }
+
+  delete node.parameters.ttps_field;
+  node.parameters.ttps_fields.push('');
+};
+
 const removePayloadContextField = (node: any, index: string | number) => {
   const fields = getPayloadContextFields(node);
   fields.splice(Number(index), 1);
   sanitizePayloadContextFieldsForNode(node);
+};
+
+const removeTtpField = (node: any, index: string | number) => {
+  const fields = getTtpFields(node);
+  fields.splice(Number(index), 1);
+  sanitizeTtpFieldsForNode(node);
 };
 
 const normalizeImportedParameters = (data: any) => {
@@ -355,17 +425,29 @@ const normalizeImportedParameters = (data: any) => {
       input_format: source.siem?.input_format || '',
       name_field: mapping.name || '',
       description_field: mapping.description || '',
-      ttps_field: mapping.ttps || '',
+      ttps_fields: sanitizeTtpFieldsValue(mapping.ttps),
       alert_type_field: mapping.alert_type || '',
-      acceptable_risk_field: mapping.acceptable_risk || '',
+      max_cvss_base_score: mapping.max_cvss_base_score || '',
+      max_impact_subscore: mapping.max_impact_subscore || '',
+      max_exploitability_subscore: mapping.max_exploitability_subscore || '',
       payload_context_fields: sanitizePayloadContextFieldsValue(mapping.payload_context)
     };
   }
 
-  return {
-    ...source,
+  const normalized = {
+    siem_name: source?.siem_name || '',
+    input_format: source?.input_format || '',
+    name_field: source?.name_field || '',
+    description_field: source?.description_field || '',
+    ttps_fields: sanitizeTtpFieldsValue(source?.ttps_fields ?? source?.ttps_field),
+    alert_type_field: source?.alert_type_field || '',
+    max_cvss_base_score: source?.max_cvss_base_score || '',
+    max_impact_subscore: source?.max_impact_subscore || '',
+    max_exploitability_subscore: source?.max_exploitability_subscore || '',
     payload_context_fields: sanitizePayloadContextFieldsValue(source?.payload_context_fields)
   };
+
+  return sanitizeParameters(normalized);
 };
 
 const openParametersFilePicker = () => {
@@ -409,6 +491,7 @@ const exportSelectedParameters = () => {
 };
 
 const buildTranslatorConfiguration = (parameters: Record<string, any> = {}) => {
+  const ttps = sanitizeTtpFieldsValue(parameters.ttps_fields ?? parameters.ttps_field);
   const payloadContext = sanitizePayloadContextFieldsValue(parameters.payload_context_fields);
 
   return {
@@ -419,13 +502,55 @@ const buildTranslatorConfiguration = (parameters: Record<string, any> = {}) => {
     field_mapping: {
       name: String(parameters.name_field || '').trim(),
       description: String(parameters.description_field || '').trim(),
-      ttps: String(parameters.ttps_field || '').trim(),
+      ttps,
       alert_type: String(parameters.alert_type_field || '').trim(),
-      acceptable_risk: String(parameters.acceptable_risk_field || '').trim(),
+      max_cvss_base_score: String(parameters.max_cvss_base_score || '').trim(),
+      max_impact_subscore: String(parameters.max_impact_subscore || '').trim(),
+      max_exploitability_subscore: String(parameters.max_exploitability_subscore || '').trim(),
       payload_context: payloadContext
     }
   };
 };
+
+const getMissingTranslatorParameters = (parameters: Record<string, any> = {}) => {
+  const sanitized = sanitizeParameters(parameters);
+  const missingFields = Object.entries(REQUIRED_TRANSLATOR_PARAMETER_LABELS)
+    .filter(([key]) => !String(sanitized[key] || '').trim())
+    .map(([, label]) => label);
+
+  if (sanitizeTtpFieldsValue(sanitized.ttps_fields).length === 0) {
+    missingFields.push('TTP Fields');
+  }
+
+  return missingFields;
+};
+
+const createExecutionValidationMessage = computed(() => {
+  if (!executionInputPath.value.trim()) {
+    return 'Input file path is required.';
+  }
+
+  if (executionInputFileSize.value > MAX_INPUT_FILE_SIZE_BYTES) {
+    return 'Input file must be 10 MB or smaller.';
+  }
+
+  const rawSiemAlert = executionInputData.value ?? executionInputText.value.trim();
+
+  if (!rawSiemAlert) {
+    return 'Input file must contain a Raw SIEM alert.';
+  }
+
+  const translatorNode = getTranslatorNode();
+  const missingParameters = getMissingTranslatorParameters(translatorNode?.parameters || {});
+
+  if (missingParameters.length > 0) {
+    return `Complete all required translator parameters: ${missingParameters.join(', ')}.`;
+  }
+
+  return '';
+});
+
+const canCreateExecution = computed(() => !createExecutionValidationMessage.value);
 
 const getTranslatorNode = () => {
   return canvasNodes.value.find((node) => node.id === 'm1' || node.node_type === 'm1');
@@ -453,23 +578,12 @@ const buildPipelineSnapshot = () => {
 };
 
 const createExecution = () => {
-  if (!executionInputPath.value.trim()) {
-    alert('Input file path is required.');
-    return;
-  }
-
-  if (executionInputFileSize.value > MAX_INPUT_FILE_SIZE_BYTES) {
-    alert('Input file must be 10 MB or smaller.');
+  if (createExecutionValidationMessage.value) {
+    alert(createExecutionValidationMessage.value);
     return;
   }
 
   const rawSiemAlert = executionInputData.value ?? executionInputText.value.trim();
-
-  if (!rawSiemAlert) {
-    alert('Input file must contain a Raw SIEM alert.');
-    return;
-  }
-
   const translatorNode = getTranslatorNode();
   const translatorConfiguration = buildTranslatorConfiguration(translatorNode?.parameters || {});
   const pipelineSnapshot = buildPipelineSnapshot();
@@ -547,7 +661,17 @@ const goBack = () => {
       <div>
         <button class="btn-primary" @click="$router.push('/execution/simulations')">Execution List</button>
         &nbsp;
-        <button class="create-execution-button btn-primary-exec" @click="createExecution">Create Execution</button>
+        <button
+          class="create-execution-button btn-primary-exec"
+          :class="{ disabled: !canCreateExecution }"
+          :disabled="!canCreateExecution"
+          @click="createExecution"
+        >
+          Create Execution
+        </button>
+        <p v-if="createExecutionValidationMessage" class="helper-text compact-helper create-execution-helper">
+          {{ createExecutionValidationMessage }}
+        </p>
       </div>
     </div>
     <div class="designer-header">
@@ -606,11 +730,56 @@ const goBack = () => {
                 v-for="(val, key) in selectedCanvasNode.parameters"
                 :key="key"
                 class="form-field"
-                :class="{ 'payload-context-field': key === 'payload_context_fields' }"
+                :class="{ 'payload-context-field': key === 'payload_context_fields' || key === 'ttps_fields' }"
               >
                 <label>{{ formatParamLabel(key as string) }}</label>
 
-                <template v-if="key === 'payload_context_fields'">
+                <template v-if="key === 'ttps_fields'">
+                  <div class="payload-header">
+                    <span class="helper-text compact-helper">
+                      Add one TTP field path or SIEM prefix per entry. Use a full field such as
+                      <code>rule.mitre.id</code>, or a prefix such as
+                      <code>attack</code> or <code>mitre</code> to extract keys like
+                      <code>attack.t1003</code>, <code>attack.t1003.001</code> or <code>mitre.t1055</code>.
+                    </span>
+
+                    <button
+                      type="button"
+                      class="btn-add-field"
+                      @click="addTtpField(selectedCanvasNode)"
+                      title="Add field"
+                    >
+                      +
+                    </button>
+                  </div>
+
+                  <div class="payload-fields">
+                    <div
+                      v-for="(_, index) in getTtpFields(selectedCanvasNode)"
+                      :key="index"
+                      class="payload-field-row"
+                    >
+                      <input
+                        v-model="selectedCanvasNode.parameters.ttps_fields[index]"
+                        type="text"
+                        class="text-input"
+                        placeholder="Example: rule.mitre.id or attack"
+                        @blur="sanitizeTtpFieldsForNode(selectedCanvasNode)"
+                      />
+
+                      <button
+                        type="button"
+                        class="btn-remove-field"
+                        @click="removeTtpField(selectedCanvasNode, index)"
+                        title="Remove field"
+                      >
+                        x
+                      </button>
+                    </div>
+                  </div>
+                </template>
+
+                <template v-else-if="key === 'payload_context_fields'">
                   <div class="payload-header">
                     <span class="helper-text compact-helper">Add one payload context path per field.</span>
 

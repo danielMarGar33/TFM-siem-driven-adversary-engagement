@@ -1,4 +1,5 @@
-﻿import json
+import json
+import re
 import time
 from typing import Any, Dict, List, Optional
 
@@ -9,7 +10,9 @@ NORMALIZED_ALERT_FIELDS = [
     "description",
     "ttps",
     "alert_type",
-    "acceptable_risk",
+    "max_cvss_base_score",
+    "max_impact_subscore",
+    "max_exploitability_subscore",
     "payload_context",
 ]
 
@@ -19,11 +22,13 @@ VALID_ALERT_TYPES = {
     "elicit",
 }
 
-REQUIRED_ACCEPTABLE_RISK_FIELDS = [
+REQUIRED_SCORE_FIELDS = [
     "max_cvss_base_score",
     "max_impact_subscore",
     "max_exploitability_subscore",
 ]
+
+TTP_PATTERN = re.compile(r"T\d{4}(?:\.\d{3})?", re.IGNORECASE)
 
 
 # =========================
@@ -83,20 +88,29 @@ def get_nested_value(data: Any, path: Optional[str]) -> Any:
       - rule.description
       - rule.mitre.id
       - tags.engage.alert_type
-      - tags.engage.acceptable_risk
+
+    Also supports flattened keys that already contain dots, for example
+    "attack.t1003" at the current object level.
     """
     if data is None or not path:
         return None
+
+    if isinstance(data, dict) and path in data:
+        return data[path]
 
     parts = path.split(".")
     current = data
 
     for index, part in enumerate(parts):
+        remaining_path = ".".join(parts[index:])
+
         if isinstance(current, dict):
+            if remaining_path in current:
+                return current[remaining_path]
+
             current = current.get(part)
 
         elif isinstance(current, list):
-            remaining_path = ".".join(parts[index:])
             values = [
                 get_nested_value(item, remaining_path)
                 for item in current
@@ -143,6 +157,11 @@ def flatten_list(values: List[Any]) -> List[Any]:
 def normalize_ttps(value: Any) -> List[str]:
     """
     Normalize ATT&CK technique IDs into a deterministic de-duplicated list.
+
+    It accepts:
+      - plain values such as "T1003" or "attack.t1003.001"
+      - nested containers
+      - objects whose keys embed ATT&CK IDs
     """
     normalized = []
     seen = set()
@@ -151,16 +170,99 @@ def normalize_ttps(value: Any) -> List[str]:
         if item is None:
             continue
 
-        technique = str(item).strip().upper()
+        if isinstance(item, dict):
+            for key, nested_value in item.items():
+                if isinstance(key, str):
+                    for technique in TTP_PATTERN.findall(key):
+                        normalized_technique = technique.strip().upper()
 
-        if technique.startswith("ATTACK."):
-            technique = technique.replace("ATTACK.", "", 1)
+                        if normalized_technique not in seen:
+                            normalized.append(normalized_technique)
+                            seen.add(normalized_technique)
 
-        if technique and technique not in seen:
-            normalized.append(technique)
-            seen.add(technique)
+                for technique in normalize_ttps(nested_value):
+                    if technique not in seen:
+                        normalized.append(technique)
+                        seen.add(technique)
+
+            continue
+
+        if isinstance(item, list):
+            for technique in normalize_ttps(item):
+                if technique not in seen:
+                    normalized.append(technique)
+                    seen.add(technique)
+
+            continue
+
+        for technique in TTP_PATTERN.findall(str(item).strip()):
+            normalized_technique = technique.strip().upper()
+
+            if normalized_technique not in seen:
+                normalized.append(normalized_technique)
+                seen.add(normalized_technique)
 
     return normalized
+
+
+def extract_ttps_from_prefixed_keys(data: Any, path: str) -> List[Any]:
+    """
+    Extract ATT&CK techniques from flattened SIEM keys such as:
+      - attack.t1003
+      - attack.t1003.001
+      - attack.t1055
+      - mitre.t1003
+    """
+    if not path:
+        return []
+
+    parent_path, separator, prefix = path.rpartition(".")
+    container = get_nested_value(data, parent_path) if separator else data
+
+    if not isinstance(container, dict):
+        return []
+
+    prefix_pattern = f"{prefix}."
+    values = []
+
+    for key, value in container.items():
+        if not isinstance(key, str) or not key.startswith(prefix_pattern):
+            continue
+
+        values.append(key[len(prefix_pattern):])
+        values.append(value)
+
+    return values
+
+
+def extract_ttps(alert: Dict[str, Any], mapping_value: Any) -> List[str]:
+    """
+    Resolve ATT&CK techniques from one or more mapping entries.
+
+    Each entry can point to:
+      - a standard nested field such as rule.mitre.id
+      - a container object with technique keys such as attack.{t1003,t1055}
+      - a flattened SIEM prefix such as attack or mitre
+    """
+    values = []
+
+    for path in flatten_list(normalize_to_list(mapping_value)):
+        if not path:
+            continue
+
+        normalized_path = str(path).strip()
+
+        if not normalized_path:
+            continue
+
+        resolved_value = get_nested_value(alert, normalized_path)
+
+        if resolved_value is not None:
+            values.append(resolved_value)
+
+        values.extend(extract_ttps_from_prefixed_keys(alert, normalized_path))
+
+    return normalize_ttps(values)
 
 
 def extract_payload_context(
@@ -221,29 +323,26 @@ def normalize_alert_type(value: Any) -> str:
     return alert_type
 
 
-def normalize_acceptable_risk(value: Any) -> Dict[str, float]:
+def normalize_score_fields(raw_values: Dict[str, Any]) -> Dict[str, float]:
     """
-    Normalize the operator-provided acceptable_risk object.
-
-    The translator does not infer thresholds. It only reads the three numeric
-    CVSS-derived limits through the field mapping received in the webhook payload.
+    Normalize the three CVSS-derived maximum score fields from the webhook mapping.
     """
-    if not isinstance(value, dict):
+    if not isinstance(raw_values, dict):
         raise ValueError(
-            "Missing or invalid acceptable_risk. Check field_mapping.acceptable_risk in configuration_data."
+            "Missing or invalid score fields. Check max_cvss_base_score, max_impact_subscore and max_exploitability_subscore in field_mapping."
         )
 
     normalized = {}
 
-    for field in REQUIRED_ACCEPTABLE_RISK_FIELDS:
-        if field not in value:
-            raise ValueError(f"Missing acceptable_risk.{field}")
+    for field in REQUIRED_SCORE_FIELDS:
+        if field not in raw_values:
+            raise ValueError(f"Missing {field}")
 
         try:
-            normalized[field] = float(value[field])
+            normalized[field] = float(raw_values[field])
         except (TypeError, ValueError) as exc:
             raise ValueError(
-                f"Invalid acceptable_risk.{field}: expected numeric value, got {value[field]!r}"
+                f"Invalid {field}: expected numeric value, got {raw_values[field]!r}"
             ) from exc
 
     return normalized
@@ -306,15 +405,18 @@ def translate_alert(
     """
     Translate one SIEM alert into the normalized alert schema.
     """
-    time.sleep(5) # Simula tiempo de espera para recibir datos por webhook
+    time.sleep(5)  # Simula tiempo de espera para recibir datos por webhook
     mapping = config.get("field_mapping", {})
 
     name = get_nested_value(alert, mapping.get("name"))
     description = get_nested_value(alert, mapping.get("description"))
-    ttps = normalize_ttps(get_nested_value(alert, mapping.get("ttps")))
-
+    ttps = extract_ttps(alert, mapping.get("ttps"))
     raw_alert_type = get_nested_value(alert, mapping.get("alert_type"))
-    raw_acceptable_risk = get_nested_value(alert, mapping.get("acceptable_risk"))
+    score_fields = {
+        field: get_nested_value(alert, mapping.get(field))
+        for field in REQUIRED_SCORE_FIELDS
+    }
+    normalized_scores = normalize_score_fields(score_fields)
 
     processed_alert = {
         "id": alert_id,
@@ -322,7 +424,9 @@ def translate_alert(
         "description": str(description).strip() if description else "No description provided by the SIEM alert.",
         "ttps": ttps,
         "alert_type": normalize_alert_type(raw_alert_type),
-        "acceptable_risk": normalize_acceptable_risk(raw_acceptable_risk),
+        "max_cvss_base_score": normalized_scores["max_cvss_base_score"],
+        "max_impact_subscore": normalized_scores["max_impact_subscore"],
+        "max_exploitability_subscore": normalized_scores["max_exploitability_subscore"],
         "payload_context": extract_payload_context(
             alert,
             mapping.get("payload_context"),

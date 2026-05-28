@@ -15,6 +15,7 @@ const selectedTaskId = ref<string | null>(null);
 const executionLogs = ref<any[]>([]);
 const logsLoading = ref(false);
 const showFinalResultsModal = ref(false);
+const activeFinalResultsTab = ref<'results' | 'payload'>('results');
 const activeAbortController = ref<AbortController | null>(null);
 
 const fixedPipeline = (pipelinesData as any[])[0];
@@ -199,6 +200,13 @@ const getWebhookPath = (node: any) => {
 };
 
 const buildTranslatorConfiguration = (parameters: Record<string, any> = {}) => {
+  const rawTtpFields = parameters.ttps_fields ?? parameters.ttps_field;
+  const ttpFieldSource = Array.isArray(rawTtpFields)
+    ? rawTtpFields
+    : String(rawTtpFields || '').split(',');
+  const ttpFields = ttpFieldSource
+    .map((field) => field.trim())
+    .filter((field) => field.length > 0);
   const rawPayloadContext = parameters.payload_context_fields;
   const payloadContextSource = Array.isArray(rawPayloadContext)
     ? rawPayloadContext
@@ -215,9 +223,11 @@ const buildTranslatorConfiguration = (parameters: Record<string, any> = {}) => {
     field_mapping: {
       name: String(parameters.name_field || '').trim(),
       description: String(parameters.description_field || '').trim(),
-      ttps: String(parameters.ttps_field || '').trim(),
+      ttps: ttpFields,
       alert_type: String(parameters.alert_type_field || '').trim(),
-      acceptable_risk: String(parameters.acceptable_risk_field || '').trim(),
+      max_cvss_base_score: String(parameters.max_cvss_base_score || '').trim(),
+      max_impact_subscore: String(parameters.max_impact_subscore || '').trim(),
+      max_exploitability_subscore: String(parameters.max_exploitability_subscore || '').trim(),
       payload_context: payloadContext
     }
   };
@@ -440,7 +450,7 @@ const handlePlay = async () => {
 
   syncDatabase();
   if (selectedTaskId.value) await loadTaskLogs(selectedTaskId.value);
-  showFinalResultsModal.value = true;
+  openFinalResultsModal();
 
   if (activeAbortController.value === abortController) {
     activeAbortController.value = null;
@@ -609,6 +619,57 @@ const finalResultRows = computed(() => {
   return [{ Value: payload }];
 });
 
+const translatorPayloadCollection = computed(() => {
+  const translatorNode = actualPipelineNodes.value.find((node: any) => {
+    return (node.node_type || node.modelId || node.id) === 'm1';
+  });
+
+  if (!translatorNode) return [];
+
+  const translatorResult = getNodeOutput(translatorNode);
+  const translatorPayload =
+    translatorResult?.output ||
+    translatorResult?.variables ||
+    translatorResult ||
+    null;
+
+  const alerts =
+    translatorPayload?.['Normalized alerts'] ||
+    translatorPayload?.alerts ||
+    [];
+
+  if (!Array.isArray(alerts)) return [];
+
+  return alerts.map((alert: any, index: number) => {
+    const collectedItems = Array.isArray(alert?.payload_context)
+      ? alert.payload_context.filter((item: any) => item && item.field)
+      : [];
+
+    return {
+      alertId: alert?.id ?? index + 1,
+      alertName: alert?.name || `Alert ${index + 1}`,
+      alertType: alert?.alert_type || '-',
+      ttps: Array.isArray(alert?.ttps) ? alert.ttps : [],
+      collectedItems
+    };
+  });
+});
+
+const payloadCollectedStats = computed(() => {
+  const alerts = translatorPayloadCollection.value;
+  const totalAlerts = alerts.length;
+  const alertsWithCollectedPayload = alerts.filter((alert: any) => alert.collectedItems.length > 0).length;
+  const totalCollectedItems = alerts.reduce((sum: number, alert: any) => {
+    return sum + alert.collectedItems.length;
+  }, 0);
+
+  return {
+    totalAlerts,
+    alertsWithCollectedPayload,
+    totalCollectedItems
+  };
+});
+
 const finalResultColumns = computed(() => {
   const columns = new Set<string>();
 
@@ -672,6 +733,11 @@ const selectedNodeOutput = computed(() => {
 const selectedNodeName = computed(() => {
   return selectedExecutionNode.value?.name || selectedExecutionNode.value?.node_name || 'Selected model';
 });
+
+const openFinalResultsModal = (tab: 'results' | 'payload' = 'results') => {
+  activeFinalResultsTab.value = tab;
+  showFinalResultsModal.value = true;
+};
 
 const formatDataValue = (value: any) => {
   if (value === null || value === undefined || value === '') return '-';
@@ -849,7 +915,7 @@ onUnmounted(() => {
       </h2>
 
       <div class="action-buttons">
-        <button class="btn-action" :class="{ disabled: !canPlay }" @click="handlePlay">
+        <button v-if="canPlay" class="btn-action" @click="handlePlay">
           <img src="/actions/Play.svg" alt="Play" />
           Play
         </button>
@@ -1034,7 +1100,7 @@ onUnmounted(() => {
         <button
           v-if="finalResultPayload"
           class="btn-primary final-results-button"
-          @click="showFinalResultsModal = true"
+          @click="openFinalResultsModal()"
         >
           View Final Results
         </button>
@@ -1130,38 +1196,124 @@ onUnmounted(() => {
             </button>
           </div>
 
-          <div v-if="finalResultRows.length > 0" class="final-results-table-wrapper">
-            <table class="final-results-table">
-              <thead>
-                <tr>
-                  <th v-for="column in finalResultColumns" :key="column">
-                    {{ column }}
-                  </th>
-                </tr>
-              </thead>
+          <div class="final-results-tabs">
+            <button
+              class="final-results-tab"
+              :class="{ active: activeFinalResultsTab === 'results' }"
+              @click="activeFinalResultsTab = 'results'"
+            >
+              MITRE Engage
+            </button>
 
-              <tbody>
-                <tr v-for="(row, rowIndex) in finalResultRows" :key="rowIndex">
-                  <td v-for="column in finalResultColumns" :key="column">
-                    <span
-                      v-if="column === 'Status'"
-                      class="result-status-pill"
-                      :class="String(row[column] || '').toLowerCase().replace('_', '-')"
-                    >
-                      {{ row[column] || '-' }}
-                    </span>
-
-                    <span v-else>
-                      {{ formatDataValue(row[column]) }}
-                    </span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+            <button
+              class="final-results-tab"
+              :class="{ active: activeFinalResultsTab === 'payload' }"
+              @click="activeFinalResultsTab = 'payload'"
+            >
+              Payload Collected
+            </button>
           </div>
 
-          <div v-else class="final-results-empty">
-            No final output is available yet.
+          <template v-if="activeFinalResultsTab === 'results'">
+            <div v-if="finalResultRows.length > 0" class="final-results-table-wrapper">
+              <table class="final-results-table">
+                <thead>
+                  <tr>
+                    <th v-for="column in finalResultColumns" :key="column">
+                      {{ column }}
+                    </th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  <tr v-for="(row, rowIndex) in finalResultRows" :key="rowIndex">
+                    <td v-for="column in finalResultColumns" :key="column">
+                      <span
+                        v-if="column === 'Status'"
+                        class="result-status-pill"
+                        :class="String(row[column] || '').toLowerCase().replace('_', '-')"
+                      >
+                        {{ row[column] || '-' }}
+                      </span>
+
+                      <span v-else>
+                        {{ formatDataValue(row[column]) }}
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div v-else class="final-results-empty">
+              No final output is available yet.
+            </div>
+          </template>
+
+          <div v-else class="payload-collected-panel">
+            <div class="payload-summary-grid">
+              <article class="payload-summary-card">
+                <span class="payload-summary-label">Normalized Alerts</span>
+                <strong>{{ payloadCollectedStats.totalAlerts }}</strong>
+              </article>
+
+              <article class="payload-summary-card">
+                <span class="payload-summary-label">Alerts With Intelligence</span>
+                <strong>{{ payloadCollectedStats.alertsWithCollectedPayload }}</strong>
+              </article>
+
+              <article class="payload-summary-card">
+                <span class="payload-summary-label">Collected Fields</span>
+                <strong>{{ payloadCollectedStats.totalCollectedItems }}</strong>
+              </article>
+            </div>
+
+            <div v-if="translatorPayloadCollection.length > 0" class="payload-alerts-grid">
+              <article
+                v-for="alert in translatorPayloadCollection"
+                :key="`${alert.alertId}-${alert.alertName}`"
+                class="payload-alert-card"
+              >
+                <div class="payload-alert-header">
+                  <div>
+                    <span class="payload-alert-kicker">Alert {{ alert.alertId }}</span>
+                    <h4>{{ alert.alertName }}</h4>
+                  </div>
+
+                  <span class="payload-alert-type">{{ alert.alertType }}</span>
+                </div>
+
+                <div v-if="alert.ttps.length > 0" class="payload-ttp-row">
+                  <span
+                    v-for="ttp in alert.ttps"
+                    :key="ttp"
+                    class="payload-ttp-chip"
+                  >
+                    {{ ttp }}
+                  </span>
+                </div>
+
+                <div v-if="alert.collectedItems.length > 0" class="payload-item-list">
+                  <div
+                    v-for="item in alert.collectedItems"
+                    :key="`${alert.alertId}-${item.field}`"
+                    class="payload-item-card"
+                  >
+                    <label>{{ item.field }}</label>
+                    <pre v-if="isComplexDataValue(item.value)">{{ formatDataValue(item.value) }}</pre>
+                    <span v-else>{{ formatDataValue(item.value) }}</span>
+                  </div>
+                </div>
+
+                <div v-else class="final-results-empty payload-empty-state">
+                  No payload intelligence was collected for this alert.
+                </div>
+              </article>
+            </div>
+
+            <div v-else class="final-results-empty">
+              No payload intelligence is available yet.
+            </div>
           </div>
         </section>
       </div>
