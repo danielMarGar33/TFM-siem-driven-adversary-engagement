@@ -57,9 +57,9 @@
     "engage": {
       "alert_type": "elicit",
       "cvss": {
-        "base_score": 7.0,
-        "impact_subscore": 4.1,
-        "exploitability_subscore": 2.8
+        "base_score": 3.4,
+        "impact_subscore": 3.1,
+        "exploitability_subscore": 4.8
       }
     }
   }
