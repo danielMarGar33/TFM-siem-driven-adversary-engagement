@@ -2,8 +2,11 @@
 
 **Plataforma para ejecutar y validar un modelo de adversary engagement dirigido por alertas SIEM y basado en MITRE Engage.**
 
-Este proyecto implementa una interfaz web que permite cargar alertas SIEM enriquecidas, traducirlas a una representación común y ejecutar un pipeline de decisión basado en **MITRE Engage**.
-El objetivo es transformar una evidencia de ataque en una salida trazable similar a un playbook, indicando qué Activities pueden recomendarse y cuáles quedan descartadas según los límites de exposición definidos por CVSS v3.1.
+Este repositorio acompaña al Trabajo Fin de Máster:
+
+**Modelo de adversary engagement dirigido por alertas SIEM y basado en MITRE Engage**
+
+El objetivo principal es validar que una alerta SIEM enriquecida puede transformarse en una recomendación MITRE Engage trazable, explicable y ejecutable dentro de un flujo realista.
 
 ---
 
@@ -130,7 +133,7 @@ El uso general de la plataforma consiste en:
 2. Arrancar el frontend.
 3. Seleccionar el pipeline de adversary engagement.
 4. Crear una nueva ejecución.
-5. Cargar una alerta SIEM en formato JSON o NDJSON.
+5. Cargar una alerta SIEM.
 6. Configurar los campos necesarios para traducir la alerta.
 7. Ejecutar el pipeline.
 8. Revisar la alerta normalizada, los logs y los resultados generados.
@@ -204,16 +207,6 @@ docker run -p 5173:5173 siem-engage-decision-engine
 ```
 
 En caso de modificar el puerto interno de la aplicación o desplegar también el backend en contenedor, ajusta el mapeo de puertos según corresponda.
-
----
-
-## Objetivo del proyecto
-
-Este repositorio acompaña al Trabajo Fin de Máster:
-
-**Modelo de adversary engagement dirigido por alertas SIEM y basado en MITRE Engage**
-
-El objetivo principal es validar que una alerta SIEM enriquecida puede transformarse en una recomendación MITRE Engage trazable, explicable y ejecutable dentro de un flujo realista.
 
 ---
 
