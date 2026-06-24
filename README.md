@@ -1,4 +1,4 @@
-# 🛡️ SIEM-driven Adversary Engagement
+# SIEM-driven Adversary Engagement
 
 **Plataforma para ejecutar y validar un modelo de adversary engagement dirigido por alertas SIEM y basado en MITRE Engage.**
 
